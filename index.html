@@ -1,0 +1,640 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MoneyPlan - Catatan Keuangan v14</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
+  <style>
+    :root{
+      --bg:#f7f9fd;
+      --card:#ffffff;
+      --card2:#fbfdff;
+      --text:#172033;
+      --muted:#667085;
+      --line:#d8e0ec;
+      --line2:#edf1f7;
+      --blue:#2563eb;
+      --blue3:#dbeafe;
+      --blue2:#eaf1ff;
+      --green:#16a34a;
+      --green2:#ecfdf3;
+      --red:#dc2626;
+      --red2:#fff1f2;
+      --orange:#f59e0b;
+      --shadow:0 12px 30px rgba(15,23,42,.08);
+      --radius:18px;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+    button,input,select,textarea{font:inherit}
+    button{cursor:pointer}
+    .topbar{height:68px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 18px;position:sticky;top:0;z-index:20}
+    .brand{display:flex;align-items:center;gap:12px;min-width:0}.logo{width:42px;height:42px;border-radius:14px;background:linear-gradient(135deg,#2563eb,#7c3aed);display:grid;place-items:center;color:white;font-weight:900;flex:none}.brand h1{font-size:20px;margin:0;letter-spacing:-.03em}.brand p{font-size:12px;color:var(--muted);margin:2px 0 0}.userline{display:flex;align-items:center;gap:10px;min-width:0}.email-pill{max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;border:1px solid var(--line);background:#f8fafc;border-radius:999px;padding:9px 12px;color:var(--muted);font-size:13px}
+    .hamb{display:none;border:1px solid var(--line);background:#fff;border-radius:12px;width:42px;height:42px;font-size:22px;color:var(--text)}
+    .layout{display:grid;grid-template-columns:250px minmax(0,1fr);gap:18px;max-width:1220px;margin:0 auto;padding:18px}.sidebar{background:#fff;border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:12px;height:max-content;position:sticky;top:86px}.side-title{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:800;margin:8px 10px 12px}.nav{display:grid;gap:8px}.nav-btn{border:1px solid transparent;background:transparent;border-radius:14px;padding:12px 12px;text-align:left;color:#334155;font-weight:800;display:flex;align-items:center;gap:10px}.nav-btn:hover{background:#f8fafc;border-color:var(--line2)}.nav-btn.active{background:var(--blue2);border-color:#b8cef9;color:#1d4ed8}.content{min-width:0}.page{display:none}.page.active{display:block}.page-head{background:#fff;border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px 18px;margin-bottom:14px}.page-head h2{margin:0;font-size:22px;letter-spacing:-.03em}.page-head p{margin:6px 0 0;color:var(--muted);line-height:1.5;font-size:14px}.section{background:#fff;border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:20px;overflow:hidden}.section-title{padding:15px 18px;border-bottom:1px solid var(--line);background:linear-gradient(180deg,#fff,#fbfdff);display:flex;align-items:center;justify-content:space-between;gap:12px}.section-title h3{margin:0;font-size:17px}.section-title small{color:var(--muted)}.section-body{padding:20px 18px 18px}.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:12px}
+    .quick-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-top:8px}
+    .quick-card{border:1px solid var(--line);background:linear-gradient(180deg,#fff,#fbfdff);border-radius:18px;padding:16px;text-align:left;display:grid;gap:8px;color:var(--text);box-shadow:0 6px 16px rgba(15,23,42,.04)}
+    .quick-card:hover{border-color:#93b4ff;background:#f8fbff}
+    .quick-icon{width:38px;height:38px;border-radius:14px;background:var(--blue2);display:grid;place-items:center;font-size:20px}
+    .quick-title{font-weight:950;font-size:15px}.quick-desc{color:var(--muted);font-size:12px;line-height:1.35}
+    .compact-note{border:1px solid var(--line);background:#fff;border-radius:16px;padding:12px 14px;color:var(--muted);font-size:13px;line-height:1.45}
+.stat{grid-column:span 3;background:#fff;border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px}.stat .k{font-size:13px;color:var(--muted);font-weight:700}.stat .v{font-size:23px;font-weight:950;margin-top:8px;letter-spacing:-.03em}.stat .d{font-size:12px;color:var(--muted);margin-top:8px}.field{grid-column:span 4}.field.half{grid-column:span 6}.field.full{grid-column:span 12}label{font-size:13px;color:#344054;font-weight:800;display:block;margin-bottom:7px}.input{width:100%;border:1px solid #cfd8e6;background:#fff;color:var(--text);border-radius:14px;padding:13px 14px;outline:none;min-height:48px}.input:focus{border-color:#93b4ff;box-shadow:0 0 0 4px rgba(37,99,235,.10)}.help{font-size:12px;color:var(--muted);margin-top:6px;line-height:1.4}.actions{display:flex;gap:10px;flex-wrap:wrap}.btn{border:0;border-radius:14px;padding:12px 16px;font-weight:900;min-height:46px;background:var(--blue);color:white}.btn:hover{filter:brightness(.97)}.btn.secondary{background:#fff;color:#344054;border:1px solid var(--line)}.btn.green{background:var(--green)}.btn.red{background:var(--red)}.btn.orange{background:var(--orange)}.btn.full{width:100%}.msg{margin-top:12px}.notice{border:1px solid #fed7aa;background:#fff7ed;color:#9a3412;padding:12px 14px;border-radius:14px;line-height:1.5}.notice.ok{border-color:#bbf7d0;background:#f0fdf4;color:#166534}.notice.err{border-color:#fecdd3;background:#fff1f2;color:#991b1b}.hidden{display:none!important}.divider{height:1px;background:var(--line);margin:16px 0}.list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.item{border:1px solid var(--line);border-radius:16px;background:#fff;padding:14px}.item-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.item-title{font-weight:950}.item-sub{color:var(--muted);font-size:12px;margin-top:3px}.chip{display:inline-flex;align-items:center;border-radius:999px;padding:6px 10px;font-size:12px;font-weight:900;border:1px solid var(--line);background:#f8fafc;color:#475569}.chip.buy,.chip.income{background:var(--green2);border-color:#b7efc8;color:#15803d}.chip.sell,.chip.expense{background:var(--red2);border-color:#fecdd3;color:#be123c}.item-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:12px}.mini{border:1px solid var(--line2);background:#fbfdff;border-radius:14px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:14px}.mini .k{font-size:12px;color:var(--muted);font-weight:700}.mini .v{font-size:14px;font-weight:900;text-align:right}.muted{color:var(--muted)}.right{text-align:right}.danger-link{border:0;background:transparent;color:var(--red);font-weight:900;padding:0}.empty{border:1px dashed #cbd5e1;background:#f8fafc;border-radius:16px;padding:22px;text-align:center;color:var(--muted)}.auth{max-width:460px;margin:42px auto;background:#fff;border:1px solid var(--line);border-radius:24px;box-shadow:var(--shadow);padding:24px}.auth h2{margin:0;font-size:28px}.auth p{color:var(--muted);line-height:1.5}.drawer-backdrop{display:none;position:fixed;inset:0;background:rgba(15,23,42,.38);z-index:60}.drawer{position:absolute;top:0;right:0;width:min(330px,88vw);height:100%;background:#fff;border-left:1px solid var(--line);padding:16px;box-shadow:-20px 0 40px rgba(15,23,42,.16)}.drawer-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}.drawer-head h3{margin:0}.drawer .nav-btn{width:100%}.print-report{display:none}
+    @media(max-width:980px){.layout{grid-template-columns:1fr}.sidebar{display:none}.hamb{display:block}.stat{grid-column:span 6}.field,.field.half{grid-column:span 6}.page-head h2{font-size:20px}.userline .email-pill{display:none}.drawer-backdrop.show{display:block}}
+    @media(max-width:640px){.topbar{height:62px;padding:0 12px}.brand h1{font-size:18px}.brand p{display:none}.layout{padding:12px;gap:12px}.page-head,.section{border-radius:16px}.section-body{padding:20px 14px 16px}.grid{gap:10px}.stat{grid-column:span 6;padding:14px}.stat .v{font-size:19px}.stat .d{display:none}.field,.field.half{grid-column:span 6}.field.full{grid-column:span 12}.actions .btn{width:100%}.list{grid-template-columns:repeat(2,minmax(0,1fr))}.item-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.item-head{flex-direction:column}.right{text-align:left}.input{min-height:48px}.page-head{padding:14px}.page-head p{font-size:13px}.quick-grid{grid-template-columns:repeat(2,1fr)}.quick-card{padding:13px}.section-title{padding:13px 14px}.section-title h3{font-size:16px}.mini{padding:9px}.mini .v{font-size:12px}}
+    @media(max-width:430px){.stat,.field,.field.half{grid-column:span 12}.quick-grid{grid-template-columns:1fr}.list{grid-template-columns:1fr}.item-grid{grid-template-columns:1fr}}
+
+
+    /* V14: aksen warna agar section tidak nyaru di mobile */
+    #page-dashboard{--accent:#2563eb;--accent-bg:#eff6ff;--accent-soft:#dbeafe}
+    #page-invest{--accent:#7c3aed;--accent-bg:#f5f3ff;--accent-soft:#ede9fe}
+    #page-cash{--accent:#16a34a;--accent-bg:#f0fdf4;--accent-soft:#dcfce7}
+    #page-history{--accent:#f97316;--accent-bg:#fff7ed;--accent-soft:#ffedd5}
+    #page-summary{--accent:#0891b2;--accent-bg:#ecfeff;--accent-soft:#cffafe}
+    .page-head{border-left:7px solid var(--accent,#2563eb);background:linear-gradient(135deg,var(--accent-bg,#eff6ff),#fff 62%)}
+    .section{position:relative;border-left:7px solid var(--accent,#2563eb);background:#fff}
+    .section-title{background:linear-gradient(90deg,var(--accent-bg,#eff6ff),#fff 72%)}
+    .section-title h3{display:flex;align-items:center;gap:9px}
+    .section-title h3::before{content:"";width:10px;height:28px;border-radius:999px;background:var(--accent,#2563eb);display:inline-block;box-shadow:0 0 0 5px var(--accent-soft,#dbeafe)}
+    .stat{position:relative;overflow:hidden;border-top:5px solid var(--stat-color,#2563eb);background:linear-gradient(135deg,var(--stat-bg,#eff6ff),#fff 62%)}
+    .stat::after{content:"";position:absolute;right:-18px;bottom:-18px;width:82px;height:82px;border-radius:999px;background:var(--stat-bg,#eff6ff);border:1px solid rgba(15,23,42,.05)}
+    .stat .k,.stat .v,.stat .d{position:relative;z-index:1}
+    .stat .k{display:flex;align-items:center;gap:7px;color:#344054}
+    .stat.cash{--stat-color:#16a34a;--stat-bg:#ecfdf3}
+    .stat.invest{--stat-color:#7c3aed;--stat-bg:#f5f3ff}
+    .stat.income{--stat-color:#2563eb;--stat-bg:#eff6ff}
+    .stat.expense{--stat-color:#ef4444;--stat-bg:#fff1f2}
+    .quick-card{position:relative;overflow:hidden;border-bottom:6px solid var(--q-color,#2563eb)}
+    .quick-card::after{content:"";position:absolute;right:-20px;top:-20px;width:80px;height:80px;border-radius:999px;background:var(--q-bg,#eff6ff)}
+    .quick-card:nth-child(1){--q-color:#7c3aed;--q-bg:#f5f3ff}.quick-card:nth-child(2){--q-color:#f97316;--q-bg:#fff7ed}.quick-card:nth-child(3){--q-color:#16a34a;--q-bg:#f0fdf4}.quick-card:nth-child(4){--q-color:#ef4444;--q-bg:#fff1f2}
+    .quick-card>*{position:relative;z-index:1}.quick-icon{background:var(--q-bg,#eff6ff);border:1px solid rgba(15,23,42,.06)}
+    .page .grid + .section{margin-top:10px}
+    #page-dashboard #statsGrid{margin-bottom:22px}
+
+    .quick-section{margin-top:8px}
+    .quick-section .section-body{padding-top:28px}
+    .quick-section .quick-grid{margin-top:0}
+    @media(max-width:640px){.quick-section{margin-top:10px}.quick-section .section-body{padding-top:24px}}
+    .list .item{border-bottom:5px solid #c7d2fe;box-shadow:0 8px 18px rgba(15,23,42,.045)}
+    .list .item:nth-child(4n+1){border-bottom-color:#7c3aed}.list .item:nth-child(4n+2){border-bottom-color:#16a34a}.list .item:nth-child(4n+3){border-bottom-color:#2563eb}.list .item:nth-child(4n+4){border-bottom-color:#f97316}
+    .mini{background:linear-gradient(180deg,#fff,#fbfdff)}
+    @media(max-width:640px){.page-head{border-left-width:6px}.section{border-left-width:6px}.section-title h3::before{height:22px;width:8px;box-shadow:0 0 0 4px var(--accent-soft,#dbeafe)}.stat{border-top-width:4px}.quick-card{border-bottom-width:5px}}
+
+    @media print{body{background:#fff}.topbar,.layout,.drawer-backdrop{display:none!important}.print-report{display:block;padding:24px;font-family:Arial,sans-serif;color:#111}.print-report h1{font-size:22px}.print-report table{width:100%;border-collapse:collapse;margin-top:14px;font-size:11px}.print-report th,.print-report td{border:1px solid #bbb;padding:6px;text-align:left}.print-report th{background:#f1f5f9}}
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><div class="logo">FR</div><div><h1>MoneyPlan</h1><p>Catatan cash & investasi</p></div></div>
+    <div class="userline" id="topActions"><button class="hamb" id="hambBtn">☰</button></div>
+  </header>
+
+  <div class="drawer-backdrop" id="drawerBackdrop">
+    <aside class="drawer">
+      <div class="drawer-head"><h3>Menu</h3><button class="btn secondary" id="closeDrawer">Tutup</button></div>
+      <div class="nav" id="drawerNav"></div>
+    </aside>
+  </div>
+
+  <div id="authBox" class="auth">
+    <h2>Masuk dulu</h2>
+    <p>Data kamu tersimpan per akun Supabase. Bukan global.</p>
+    <div id="configNotice"></div>
+    <label>Email</label>
+    <input class="input" id="email" type="email" placeholder="email kamu" />
+    <div style="height:12px"></div>
+    <label>Password</label>
+    <input class="input" id="password" type="password" placeholder="minimal 6 karakter" />
+    <div style="height:14px"></div>
+    <div class="actions"><button class="btn" id="loginBtn">Login</button><button class="btn secondary" id="registerBtn">Register</button></div>
+    <div id="authMsg" class="msg"></div>
+  </div>
+
+  <main id="app" class="layout hidden">
+    <aside class="sidebar">
+      <div class="side-title">Navigasi</div>
+      <div class="nav" id="sideNav"></div>
+    </aside>
+
+    <section class="content">
+      <div id="page-dashboard" class="page active">
+        <div class="page-head"><h2>Home</h2><p>Mulai dari tombol cepat di bawah. Cash dan investasi dibuat terpisah supaya orang awam tidak bingung.</p></div>
+        <div class="grid" id="statsGrid"></div>
+        <div class="section quick-section">
+          <div class="section-title"><h3>Aksi cepat</h3><small>2 kolom di HP</small></div>
+          <div class="section-body">
+            <div class="quick-grid">
+              <button class="quick-card" onclick="quickInvest('buy')"><div class="quick-icon">📈</div><div class="quick-title">Beli Investasi</div><div class="quick-desc">Contoh beli BBCA, BTC, emas.</div></button>
+              <button class="quick-card" onclick="quickInvest('sell')"><div class="quick-icon">📉</div><div class="quick-title">Jual Investasi</div><div class="quick-desc">Hasil jual bisa masuk cash.</div></button>
+              <button class="quick-card" onclick="quickCash('income')"><div class="quick-icon">💰</div><div class="quick-title">Cash Masuk</div><div class="quick-desc">Uang jajan, transfer, pemasukan.</div></button>
+              <button class="quick-card" onclick="quickCash('expense')"><div class="quick-icon">🧾</div><div class="quick-title">Cash Keluar</div><div class="quick-desc">Makan, transport, belanja.</div></button>
+            </div>
+            <div style="height:12px"></div>
+            <div class="actions">
+              <button class="btn secondary" onclick="goPage('history')">Lihat semua history</button>
+              <button class="btn secondary" onclick="downloadPDF()">Download PDF</button>
+            </div>
+          </div>
+        </div>
+        <div class="section">
+          <div class="section-title"><h3>Alur simpel</h3><small>Cara pakai</small></div>
+          <div class="section-body">
+            <div class="compact-note"><b>1.</b> Catat cash masuk dulu kalau ada uang. <b>2.</b> Saat beli investasi, pilih “Update Cash otomatis: Ya” supaya cash berkurang. <b>3.</b> Semua transaksi bisa dilihat di History Gabungan dan diunduh PDF.</div>
+          </div>
+        </div>
+      </div>
+
+      <div id="page-invest" class="page">
+        <div class="page-head"><h2>Investasi</h2><p>Catat beli/jual aset. Setiap transaksi tetap muncul satu per satu.</p></div>
+        <div class="section">
+          <div class="section-title"><h3>Tambah transaksi investasi</h3><small>Beli atau jual aset</small></div>
+          <div class="section-body">
+            <div class="grid">
+              <div class="field"><label>Aset</label><select class="input" id="assetInput"></select></div>
+              <div class="field"><label>Aksi</label><select class="input" id="investAction"><option value="buy">Buy / beli</option><option value="sell">Sell / jual</option></select></div>
+              <div class="field"><label>Nominal transaksi</label><input class="input" id="investAmount" type="number" step="any" placeholder="contoh 450000" /><div class="help">Isi total uang transaksi, bukan harga per unit.</div></div>
+              <div class="field"><label>Jumlah unit</label><input class="input" id="investQty" type="number" step="any" placeholder="opsional" /><div class="help">Saham lembar, emas gram, crypto coin. Boleh kosong.</div></div>
+              <div class="field"><label>Fee / biaya</label><input class="input" id="investFee" type="number" step="any" value="0" /></div>
+              <div class="field"><label>Update Cash otomatis?</label><select class="input" id="cashAuto"><option value="yes">Ya</option><option value="no">Tidak</option></select><div class="help" id="cashAutoHelp">Beli = Cash berkurang. Jual = Cash bertambah.</div></div>
+              <div class="field"><label>Tanggal</label><input class="input" id="investDate" type="date" /></div>
+              <div class="field full hidden" id="customBox"><div class="grid"><div class="field half"><label>Symbol custom</label><input class="input" id="customSymbol" placeholder="contoh: UNTR" /></div><div class="field half"><label>Nama aset custom</label><input class="input" id="customName" placeholder="contoh: United Tractors" /></div></div></div>
+              <div class="field full"><label>Catatan</label><input class="input" id="investNote" placeholder="contoh: DCA bulan ini" /></div>
+              <div class="field full"><button class="btn full" id="saveInvestBtn">Simpan Investasi</button><div class="help" id="investPreview"></div></div>
+            </div>
+            <div id="investMsg" class="msg"></div>
+          </div>
+        </div>
+        <div class="section">
+          <div class="section-title"><h3>History Investasi</h3><small id="investCount">0 transaksi</small></div>
+          <div class="section-body"><div class="list" id="investList"></div></div>
+        </div>
+      </div>
+
+      <div id="page-cash" class="page">
+        <div class="page-head"><h2>Uang Cash</h2><p>Catat uang masuk dan uang keluar. Cash dari investasi otomatis ikut tercatat.</p></div>
+        <div class="section">
+          <div class="section-title"><h3>Tambah catatan cash</h3><small>Masuk atau keluar</small></div>
+          <div class="section-body">
+            <div class="grid">
+              <div class="field"><label>Jenis</label><select class="input" id="moneyType"><option value="income">Pemasukan</option><option value="expense">Pengeluaran</option></select></div>
+              <div class="field"><label>Kategori</label><input class="input" id="moneyCategory" placeholder="contoh: Uang jajan / Makan / Transport" /></div>
+              <div class="field"><label>Nominal</label><input class="input" id="moneyAmount" type="number" step="any" placeholder="contoh 50000" /></div>
+              <div class="field"><label>Tanggal</label><input class="input" id="moneyDate" type="date" /></div>
+              <div class="field full"><label>Catatan</label><input class="input" id="moneyNote" placeholder="opsional" /></div>
+              <div class="field full"><button class="btn green full" id="saveMoneyBtn">Simpan Cash</button></div>
+            </div>
+            <div id="moneyMsg" class="msg"></div>
+          </div>
+        </div>
+        <div class="section">
+          <div class="section-title"><h3>History Cash</h3><small id="moneyCount">0 catatan</small></div>
+          <div class="section-body"><div class="list" id="moneyList"></div></div>
+        </div>
+      </div>
+
+      <div id="page-history" class="page">
+        <div class="page-head"><h2>History Gabungan</h2><p>Semua transaksi investasi dan cash dalam satu tempat. Bisa download PDF.</p></div>
+        <div class="section">
+          <div class="section-title"><h3>Semua transaksi</h3><small id="allCount">0 data</small></div>
+          <div class="section-body">
+            <div class="actions">
+              <button class="btn" id="pdfBtn">Download PDF</button>
+              <button class="btn secondary" id="csvBtn">Export CSV</button>
+            </div>
+            <div class="divider"></div>
+            <div class="list" id="allList"></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="page-summary" class="page">
+        <div class="page-head"><h2>Ringkasan & Gabungan</h2><p>Di sini baru aset yang sama digabung. History aslinya tetap per transaksi.</p></div>
+        <div class="section">
+          <div class="section-title"><h3>Ringkasan Investasi per Aset</h3><small id="summaryCount">0 aset</small></div>
+          <div class="section-body"><div class="list" id="summaryList"></div></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div class="print-report" id="printReport"></div>
+
+<script>
+// ===================== CONFIG SUPABASE =====================
+const SUPABASE_URL = "https://mwlqoytdhapfzyckxpcv.supabase.co";       
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im13bHFveXRkaGFwZnp5Y2t4cGN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI4NTYwNjQsImV4cCI6MjA5ODQzMjA2NH0.9urOcy9SZHmE0cRpxq7CuwylTtvTjrSSXw9BeOyWklc"; 
+// ===========================================================
+
+const ASSETS = [
+  { id:"BBCA", type:"stock", icon:"🏦", symbol:"BBCA", name:"Bank Central Asia" },
+  { id:"BMRI", type:"stock", icon:"🏛️", symbol:"BMRI", name:"Bank Mandiri" },
+  { id:"BBRI", type:"stock", icon:"💳", symbol:"BBRI", name:"Bank Rakyat Indonesia" },
+  { id:"BTC", type:"crypto", icon:"₿", symbol:"BTC", name:"Bitcoin" },
+  { id:"HYPE", type:"crypto", icon:"◆", symbol:"HYPE", name:"Hyperliquid" },
+  { id:"ANTAM", type:"gold", icon:"🥇", symbol:"ANTAM", name:"Emas Antam" },
+  { id:"CUSTOM", type:"custom", icon:"⭐", symbol:"CUSTOM", name:"Aset Custom" }
+];
+const PAGES = [
+  { id:"dashboard", label:"Home", icon:"🏠" },
+  { id:"invest", label:"Investasi", icon:"📈" },
+  { id:"cash", label:"Uang Cash", icon:"💵" },
+  { id:"history", label:"History", icon:"🧾" },
+  { id:"summary", label:"Ringkasan", icon:"📚" }
+];
+
+let sb = null;
+let session = null;
+let investments = [];
+let money = [];
+let currentPage = "dashboard";
+
+const $ = (id) => document.getElementById(id);
+const today = () => new Date().toISOString().slice(0,10);
+const rupiah = (n) => new Intl.NumberFormat("id-ID", { style:"currency", currency:"IDR", maximumFractionDigits:0 }).format(Number(n || 0));
+const number = (n) => new Intl.NumberFormat("id-ID", { maximumFractionDigits:8 }).format(Number(n || 0));
+const assetById = (id) => ASSETS.find(a => a.id === id) || ASSETS[0];
+const validConfig = () => SUPABASE_URL.startsWith("https://") && !SUPABASE_URL.includes("ISI_") && !SUPABASE_ANON_KEY.includes("ISI_");
+
+function showMsg(el, msg, type="ok"){
+  el.innerHTML = msg ? `<div class="notice ${type}">${msg}</div>` : "";
+}
+function formatDate(d){
+  if(!d) return "-";
+  try{return new Date(d + "T00:00:00").toLocaleDateString("id-ID", {day:"2-digit", month:"short", year:"numeric"});}
+  catch(e){return d;}
+}
+function amountOfInvestment(r){
+  const total = Number(r.total_amount || 0);
+  if(total > 0) return total;
+  return Math.abs(Number(r.quantity || 0) * Number(r.price || 0));
+}
+function cashBalance(){
+  return money.reduce((sum,r)=> sum + (r.record_type === "income" ? Number(r.amount || 0) : -Number(r.amount || 0)), 0);
+}
+function calcStats(){
+  const totalBuy = investments.filter(r=>r.action === "buy").reduce((s,r)=>s + amountOfInvestment(r) + Number(r.fee || 0), 0);
+  const totalSell = investments.filter(r=>r.action === "sell").reduce((s,r)=>s + Math.max(amountOfInvestment(r) - Number(r.fee || 0), 0), 0);
+  const income = money.filter(r=>r.record_type === "income").reduce((s,r)=>s + Number(r.amount || 0), 0);
+  const expense = money.filter(r=>r.record_type === "expense").reduce((s,r)=>s + Number(r.amount || 0), 0);
+  return { cash: income - expense, totalBuy, totalSell, income, expense, netInvest: totalBuy - totalSell };
+}
+
+function renderNav(){
+  const html = PAGES.map(p => `<button class="nav-btn ${currentPage===p.id?'active':''}" data-page="${p.id}">${p.icon} <span>${p.label}</span></button>`).join("");
+  $("sideNav").innerHTML = html;
+  $("drawerNav").innerHTML = html;
+  document.querySelectorAll(".nav-btn").forEach(btn => btn.onclick = () => goPage(btn.dataset.page));
+}
+function goPage(page){
+  currentPage = page;
+  document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+  $("page-" + page).classList.add("active");
+  $("drawerBackdrop").classList.remove("show");
+  renderNav();
+  window.scrollTo({top:0, behavior:"smooth"});
+}
+window.goPage = goPage;
+function quickInvest(action){
+  goPage('invest');
+  setTimeout(() => {
+    $('investAction').value = action;
+    updateInvestUi();
+    $('investAmount').focus();
+  }, 80);
+}
+function quickCash(type){
+  goPage('cash');
+  setTimeout(() => {
+    $('moneyType').value = type;
+    $('moneyAmount').focus();
+  }, 80);
+}
+window.quickInvest = quickInvest;
+window.quickCash = quickCash;
+
+function renderAssetOptions(){
+  $("assetInput").innerHTML = ASSETS.map(a => `<option value="${a.id}">${a.icon} ${a.symbol} - ${a.name}</option>`).join("");
+}
+function updateInvestUi(){
+  const action = $("investAction").value;
+  const amount = Number($("investAmount").value || 0);
+  const fee = Number($("investFee").value || 0);
+  const auto = $("cashAuto").value === "yes";
+  $("cashAutoHelp").textContent = action === "buy" ? "Jika Ya: Cash berkurang sebesar nominal + fee." : "Jika Ya: Cash bertambah sebesar nominal - fee.";
+  const cashText = auto ? (action === "buy" ? `Cash akan berkurang ${rupiah(amount + fee)}.` : `Cash akan bertambah ${rupiah(Math.max(amount - fee,0))}.`) : "Cash tidak berubah.";
+  $("investPreview").textContent = `${cashText} Saldo cash: ${rupiah(cashBalance())}.`;
+  $("customBox").classList.toggle("hidden", $("assetInput").value !== "CUSTOM");
+}
+
+function renderStats(){
+  const s = calcStats();
+  const cards = [
+    ["cash", "💵", "Saldo Cash", rupiah(s.cash), "Uang masuk - keluar"],
+    ["invest", "📈", "Dana Investasi", rupiah(s.netInvest), "Beli - jual aset"],
+    ["income", "⬇️", "Cash Masuk", rupiah(s.income), "Total pemasukan"],
+    ["expense", "⬆️", "Cash Keluar", rupiah(s.expense), "Total pengeluaran"]
+  ];
+  $("statsGrid").innerHTML = cards.map(c => `<div class="stat ${c[0]}"><div class="k"><span>${c[1]}</span>${c[2]}</div><div class="v">${c[3]}</div><div class="d">${c[4]}</div></div>`).join("");
+}
+
+function renderInvestmentList(){
+  $("investCount").textContent = `${investments.length} transaksi`;
+  if(!investments.length){$("investList").innerHTML = `<div class="empty">Belum ada transaksi investasi.</div>`; return;}
+  $("investList").innerHTML = investments.map(r => {
+    const total = amountOfInvestment(r);
+    return `<div class="item">
+      <div class="item-head">
+        <div><div class="item-title">${r.symbol} - ${r.asset_name}</div><div class="item-sub">${formatDate(r.trx_date)} • ${r.asset_type}</div></div>
+        <span class="chip ${r.action}">${r.action.toUpperCase()}</span>
+      </div>
+      <div class="item-grid">
+        <div class="mini"><div class="k">Nominal</div><div class="v">${rupiah(total)}</div></div>
+        <div class="mini"><div class="k">Jumlah unit</div><div class="v">${Number(r.quantity||0) ? number(r.quantity) : '-'}</div></div>
+        <div class="mini"><div class="k">Fee</div><div class="v">${rupiah(r.fee)}</div></div>
+        <div class="mini"><div class="k">Catatan</div><div class="v">${r.note || '-'}</div></div>
+      </div>
+      <div class="right" style="margin-top:10px"><button class="danger-link" onclick="deleteInvestment('${r.id}')">Hapus</button></div>
+    </div>`;
+  }).join("");
+}
+function renderMoneyList(){
+  $("moneyCount").textContent = `${money.length} catatan`;
+  if(!money.length){$("moneyList").innerHTML = `<div class="empty">Belum ada catatan cash.</div>`; return;}
+  $("moneyList").innerHTML = money.map(r => `<div class="item">
+    <div class="item-head">
+      <div><div class="item-title">${r.category}</div><div class="item-sub">${formatDate(r.record_date)} ${r.source_type==='investment'?'• otomatis dari investasi':''}</div></div>
+      <span class="chip ${r.record_type}">${r.record_type === 'income' ? 'PEMASUKAN' : 'PENGELUARAN'}</span>
+    </div>
+    <div class="item-grid">
+      <div class="mini"><div class="k">Nominal</div><div class="v">${rupiah(r.amount)}</div></div>
+      <div class="mini"><div class="k">Jenis</div><div class="v">${r.record_type === 'income' ? 'Masuk' : 'Keluar'}</div></div>
+      <div class="mini"><div class="k">Catatan</div><div class="v">${r.note || '-'}</div></div>
+      <div class="mini"><div class="k">Sumber</div><div class="v">${r.source_type || 'manual'}</div></div>
+    </div>
+    <div class="right" style="margin-top:10px"><button class="danger-link" onclick="deleteMoney('${r.id}')">Hapus</button></div>
+  </div>`).join("");
+}
+function combinedRows(){
+  const invRows = investments.map(r => ({
+    id:r.id, kind:"Investasi", date:r.trx_date, created_at:r.created_at, title:`${r.symbol} - ${r.asset_name}`, action:r.action, amount:amountOfInvestment(r), fee:Number(r.fee||0), qty:Number(r.quantity||0), note:r.note || "", source:"investment"
+  }));
+  const moneyRows = money.map(r => ({
+    id:r.id, kind:"Cash", date:r.record_date, created_at:r.created_at, title:r.category, action:r.record_type, amount:Number(r.amount||0), fee:0, qty:0, note:r.note || "", source:"money"
+  }));
+  return [...invRows, ...moneyRows].sort((a,b) => new Date(b.date || b.created_at) - new Date(a.date || a.created_at) || new Date(b.created_at) - new Date(a.created_at));
+}
+function renderAllHistory(){
+  const rows = combinedRows();
+  $("allCount").textContent = `${rows.length} data`;
+  if(!rows.length){$("allList").innerHTML = `<div class="empty">Belum ada history gabungan.</div>`; return;}
+  $("allList").innerHTML = rows.map(r => `<div class="item">
+    <div class="item-head">
+      <div><div class="item-title">${r.title}</div><div class="item-sub">${formatDate(r.date)} • ${r.kind}</div></div>
+      <span class="chip ${r.action}">${String(r.action).toUpperCase()}</span>
+    </div>
+    <div class="item-grid">
+      <div class="mini"><div class="k">Nominal</div><div class="v">${rupiah(r.amount)}</div></div>
+      <div class="mini"><div class="k">Fee</div><div class="v">${rupiah(r.fee)}</div></div>
+      <div class="mini"><div class="k">Jumlah</div><div class="v">${r.qty ? number(r.qty) : '-'}</div></div>
+      <div class="mini"><div class="k">Catatan</div><div class="v">${r.note || '-'}</div></div>
+    </div>
+  </div>`).join("");
+}
+function renderSummary(){
+  const map = new Map();
+  investments.slice().sort((a,b)=> new Date(a.trx_date) - new Date(b.trx_date)).forEach(r => {
+    if(!map.has(r.asset_id)) map.set(r.asset_id, { symbol:r.symbol, name:r.asset_name, type:r.asset_type, qty:0, buy:0, sell:0, txs:0, lastDate:r.trx_date, lastNote:r.note || "" });
+    const h = map.get(r.asset_id);
+    const amt = amountOfInvestment(r);
+    const fee = Number(r.fee || 0);
+    h.txs += 1;
+    if(r.action === "buy") { h.qty += Number(r.quantity || 0); h.buy += amt + fee; }
+    if(r.action === "sell") { h.qty -= Number(r.quantity || 0); h.sell += Math.max(amt - fee,0); }
+    h.lastDate = r.trx_date;
+    h.lastNote = r.note || h.lastNote;
+  });
+  const list = [...map.values()];
+  $("summaryCount").textContent = `${list.length} aset`;
+  if(!list.length){$("summaryList").innerHTML = `<div class="empty">Belum ada ringkasan investasi.</div>`; return;}
+  $("summaryList").innerHTML = list.map(h => `<div class="item">
+    <div class="item-head"><div><div class="item-title">${h.symbol} - ${h.name}</div><div class="item-sub">${h.type} • terakhir ${formatDate(h.lastDate)}</div></div><span class="chip">${h.txs} transaksi</span></div>
+    <div class="item-grid">
+      <div class="mini"><div class="k">Jumlah bersih</div><div class="v">${h.qty ? number(h.qty) : '-'}</div></div>
+      <div class="mini"><div class="k">Total beli</div><div class="v">${rupiah(h.buy)}</div></div>
+      <div class="mini"><div class="k">Total jual</div><div class="v">${rupiah(h.sell)}</div></div>
+      <div class="mini"><div class="k">Dana bersih</div><div class="v">${rupiah(h.buy - h.sell)}</div></div>
+    </div>
+    <div class="item-sub" style="margin-top:10px">Catatan terakhir: ${h.lastNote || '-'}</div>
+  </div>`).join("");
+}
+function renderAll(){
+  renderStats();
+  renderInvestmentList();
+  renderMoneyList();
+  renderAllHistory();
+  renderSummary();
+  updateInvestUi();
+}
+
+async function loadData(){
+  const inv = await sb.from("investment_records").select("*").order("trx_date", {ascending:false}).order("created_at", {ascending:false});
+  const mon = await sb.from("money_records").select("*").order("record_date", {ascending:false}).order("created_at", {ascending:false});
+  if(inv.error){ showMsg($("investMsg"), "Gagal load investasi: " + inv.error.message, "err"); return; }
+  if(mon.error){ showMsg($("moneyMsg"), "Gagal load cash: " + mon.error.message, "err"); return; }
+  investments = inv.data || [];
+  money = mon.data || [];
+  renderAll();
+}
+
+async function saveInvestment(){
+  if(!session) return;
+  const baseAsset = assetById($("assetInput").value);
+  const isCustom = baseAsset.id === "CUSTOM";
+  const symbol = isCustom ? ($("customSymbol").value.trim() || "CUSTOM") : baseAsset.symbol;
+  const name = isCustom ? ($("customName").value.trim() || "Aset Custom") : baseAsset.name;
+  const action = $("investAction").value;
+  const total = Number($("investAmount").value || 0);
+  const qty = Number($("investQty").value || 0);
+  const fee = Number($("investFee").value || 0);
+  const note = $("investNote").value.trim();
+  const autoCash = $("cashAuto").value === "yes";
+  if(total <= 0) return showMsg($("investMsg"), "Nominal transaksi wajib lebih dari 0.", "err");
+  if(autoCash && action === "buy" && total + fee > cashBalance()){
+    const ok = confirm("Saldo cash kurang. Lanjut simpan dan saldo cash menjadi minus?");
+    if(!ok) return;
+  }
+  const payload = {
+    user_id: session.user.id,
+    asset_id: isCustom ? symbol.toUpperCase() : baseAsset.id,
+    asset_type: baseAsset.type,
+    symbol: symbol.toUpperCase(),
+    asset_name: name,
+    action,
+    quantity: qty,
+    price: 0,
+    fee,
+    total_amount: total,
+    trx_date: $("investDate").value || today(),
+    note: note || null
+  };
+  const inserted = await sb.from("investment_records").insert(payload).select("id").single();
+  if(inserted.error) return showMsg($("investMsg"), "Gagal simpan: " + inserted.error.message, "err");
+  if(autoCash){
+    const cashAmount = action === "buy" ? total + fee : Math.max(total - fee, 0);
+    const cashPayload = {
+      user_id: session.user.id,
+      record_type: action === "buy" ? "expense" : "income",
+      category: action === "buy" ? "Investasi Beli" : "Investasi Jual",
+      amount: cashAmount,
+      record_date: payload.trx_date,
+      note: `${action === 'buy' ? 'Potong Cash otomatis' : 'Masuk Cash otomatis'} - ${payload.action.toUpperCase()} ${payload.symbol}${note ? ' - ' + note : ''}`,
+      source_type: "investment",
+      source_id: inserted.data.id
+    };
+    const cashInsert = await sb.from("money_records").insert(cashPayload);
+    if(cashInsert.error) return showMsg($("investMsg"), "Investasi tersimpan, tapi catatan cash gagal: " + cashInsert.error.message, "err");
+  }
+  showMsg($("investMsg"), "Transaksi investasi tersimpan.", "ok");
+  $("investAmount").value = ""; $("investQty").value = ""; $("investFee").value = 0; $("investNote").value = "";
+  await loadData();
+}
+async function saveMoney(){
+  if(!session) return;
+  const amount = Number($("moneyAmount").value || 0);
+  if(amount <= 0) return showMsg($("moneyMsg"), "Nominal cash wajib lebih dari 0.", "err");
+  const payload = {
+    user_id: session.user.id,
+    record_type: $("moneyType").value,
+    category: $("moneyCategory").value.trim() || "Lainnya",
+    amount,
+    record_date: $("moneyDate").value || today(),
+    note: $("moneyNote").value.trim() || null,
+    source_type: "manual",
+    source_id: null
+  };
+  const res = await sb.from("money_records").insert(payload);
+  if(res.error) return showMsg($("moneyMsg"), "Gagal simpan: " + res.error.message, "err");
+  showMsg($("moneyMsg"), "Catatan cash tersimpan.", "ok");
+  $("moneyAmount").value = ""; $("moneyCategory").value = ""; $("moneyNote").value = "";
+  await loadData();
+}
+async function deleteInvestment(id){
+  if(!confirm("Hapus transaksi investasi ini? Catatan Cash otomatis yang terkait juga akan dihapus.")) return;
+  await sb.from("money_records").delete().eq("source_type", "investment").eq("source_id", id);
+  const res = await sb.from("investment_records").delete().eq("id", id);
+  if(res.error) return alert(res.error.message);
+  await loadData();
+}
+async function deleteMoney(id){
+  if(!confirm("Hapus catatan cash ini?")) return;
+  const res = await sb.from("money_records").delete().eq("id", id);
+  if(res.error) return alert(res.error.message);
+  await loadData();
+}
+window.deleteInvestment = deleteInvestment;
+window.deleteMoney = deleteMoney;
+
+function exportCSV(){
+  const rows = combinedRows();
+  const header = ["tanggal","jenis","nama","aksi","nominal","fee","jumlah","catatan"];
+  const lines = [header.join(",")].concat(rows.map(r => [r.date,r.kind,r.title,r.action,r.amount,r.fee,r.qty,`"${String(r.note||'').replaceAll('"','""')}"`].join(",")));
+  const blob = new Blob([lines.join("\n")], {type:"text/csv;charset=utf-8"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a"); a.href = url; a.download = "finance-record-transaksi.csv"; a.click(); URL.revokeObjectURL(url);
+}
+function downloadPDF(){
+  const rows = combinedRows();
+  const s = calcStats();
+  const body = rows.map(r => [formatDate(r.date), r.kind, r.title, String(r.action).toUpperCase(), rupiah(r.amount), rupiah(r.fee), r.qty ? number(r.qty) : "-", r.note || "-"]);
+  if(window.jspdf && window.jspdf.jsPDF){
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({orientation:"landscape", unit:"pt", format:"a4"});
+    doc.setFontSize(18); doc.text("Finance Record - Semua Transaksi", 40, 42);
+    doc.setFontSize(10); doc.text(`Dibuat: ${new Date().toLocaleString('id-ID')}`, 40, 60);
+    doc.text(`Saldo Cash: ${rupiah(s.cash)} | Dana Bersih Investasi: ${rupiah(s.netInvest)} | Total Data: ${rows.length}`, 40, 78);
+    doc.autoTable({
+      startY: 96,
+      head: [["Tanggal","Jenis","Nama/Kategori","Aksi","Nominal","Fee","Jumlah","Catatan"]],
+      body,
+      styles:{fontSize:8, cellPadding:4, overflow:"linebreak"},
+      headStyles:{fillColor:[37,99,235]},
+      columnStyles:{0:{cellWidth:58},1:{cellWidth:58},2:{cellWidth:135},3:{cellWidth:65},4:{cellWidth:82},5:{cellWidth:70},6:{cellWidth:60},7:{cellWidth:210}}
+    });
+    doc.save("finance-record-semua-transaksi.pdf");
+  } else {
+    buildPrintReport();
+    window.print();
+  }
+}
+function buildPrintReport(){
+  const rows = combinedRows();
+  const s = calcStats();
+  $("printReport").innerHTML = `<h1>Finance Record - Semua Transaksi</h1><p>Dibuat: ${new Date().toLocaleString('id-ID')}</p><p>Saldo Cash: ${rupiah(s.cash)} | Dana Bersih Investasi: ${rupiah(s.netInvest)} | Total Data: ${rows.length}</p><table><thead><tr><th>Tanggal</th><th>Jenis</th><th>Nama/Kategori</th><th>Aksi</th><th>Nominal</th><th>Fee</th><th>Jumlah</th><th>Catatan</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${formatDate(r.date)}</td><td>${r.kind}</td><td>${r.title}</td><td>${String(r.action).toUpperCase()}</td><td>${rupiah(r.amount)}</td><td>${rupiah(r.fee)}</td><td>${r.qty ? number(r.qty) : '-'}</td><td>${r.note || '-'}</td></tr>`).join("")}</tbody></table>`;
+}
+
+async function authLogin(register=false){
+  if(!sb) return;
+  const email = $("email").value.trim();
+  const password = $("password").value;
+  if(!email || !password) return showMsg($("authMsg"), "Email dan password wajib diisi.", "err");
+  const fn = register ? sb.auth.signUp : sb.auth.signInWithPassword;
+  const { data, error } = await fn.call(sb.auth, {email, password});
+  if(error) return showMsg($("authMsg"), error.message, "err");
+  showMsg($("authMsg"), register ? "Register berhasil. Cek email kalau perlu verifikasi." : "Login berhasil.", "ok");
+  session = data.session || (await sb.auth.getSession()).data.session;
+  await afterAuth();
+}
+async function afterAuth(){
+  const res = await sb.auth.getSession();
+  session = res.data.session;
+  if(!session){
+    $("authBox").classList.remove("hidden");
+    $("app").classList.add("hidden");
+    $("topActions").innerHTML = `<button class="hamb" id="hambBtn">☰</button>`;
+    bindHamburger();
+    return;
+  }
+  $("authBox").classList.add("hidden");
+  $("app").classList.remove("hidden");
+  $("topActions").innerHTML = `<span class="email-pill">${session.user.email}</span><button class="btn secondary" id="logoutBtn">Logout</button><button class="hamb" id="hambBtn">☰</button>`;
+  $("logoutBtn").onclick = async () => { await sb.auth.signOut(); location.reload(); };
+  bindHamburger();
+  await loadData();
+}
+function bindHamburger(){
+  const h = $("hambBtn");
+  if(h) h.onclick = () => $("drawerBackdrop").classList.add("show");
+}
+function bindEvents(){
+  $("loginBtn").onclick = () => authLogin(false);
+  $("registerBtn").onclick = () => authLogin(true);
+  $("closeDrawer").onclick = () => $("drawerBackdrop").classList.remove("show");
+  $("drawerBackdrop").onclick = (e) => { if(e.target.id === "drawerBackdrop") $("drawerBackdrop").classList.remove("show"); };
+  $("saveInvestBtn").onclick = saveInvestment;
+  $("saveMoneyBtn").onclick = saveMoney;
+  $("pdfBtn").onclick = downloadPDF;
+  $("csvBtn").onclick = exportCSV;
+  ["investAction","investAmount","investFee","cashAuto","assetInput"].forEach(id => $(id).addEventListener("input", updateInvestUi));
+}
+async function boot(){
+  bindEvents();
+  renderNav();
+  renderAssetOptions();
+  $("investDate").value = today();
+  $("moneyDate").value = today();
+  updateInvestUi();
+  if(!validConfig()){
+    showMsg($("configNotice"), "Isi SUPABASE_URL dan SUPABASE_ANON_KEY di index.html, lalu run database/schema.sql di Supabase.", "err");
+    $("loginBtn").disabled = true; $("registerBtn").disabled = true;
+    return;
+  }
+  sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  await afterAuth();
+  sb.auth.onAuthStateChange((_event, s) => { session = s; afterAuth(); });
+}
+boot();
+</script>
+</body>
+</html>
